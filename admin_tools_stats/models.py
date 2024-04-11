@@ -403,7 +403,7 @@ class DashboardStats(models.Model):
         blank=True,
         default=None,
     )
-    criteria = models.ManyToManyField(
+    criteria: models.ManyToManyField = models.ManyToManyField(
         DashboardStatsCriteria, blank=True, through="CriteriaToStatsM2M"
     )
     default_multiseries_criteria = models.ForeignKey(
