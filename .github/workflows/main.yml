@@ -22,18 +22,29 @@ jobs:
         
     strategy:
       matrix:
-        DJANGO_VERSION: ['3.2.*', '4.0.*', '4.1.*']
+        DJANGO_VERSION: ['3.2.*', '4.0.*', '4.1.*', '4.2.*']
         DB_ENGINE: [ 'postgres', 'mysql' ]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         exclude:
-          - DJANGO_VERSION: '4.1.*'
-            python-version: '3.7'
-          - DJANGO_VERSION: '4.0.*'
-            python-version: '3.7'
           - DJANGO_VERSION: '3.2.*'
             python-version: '3.11'
+          - DJANGO_VERSION: '3.2.*'
+            python-version: '3.12'
+
+          - DJANGO_VERSION: '4.0.*'
+            python-version: '3.7'
           - DJANGO_VERSION: '4.0.*'
             python-version: '3.11'
+          - DJANGO_VERSION: '4.0.*'
+            python-version: '3.12'
+
+          - DJANGO_VERSION: '4.1.*'
+            python-version: '3.7'
+          - DJANGO_VERSION: '4.2.*'
+            python-version: '3.12'
+
+          - DJANGO_VERSION: '4.2.*'
+            python-version: '3.7'
       fail-fast: false
 
     services:
@@ -49,7 +60,7 @@ jobs:
         ports:
           - 5432:5432
       mysql:
-        image: mysql:5.7
+        image: mysql:8.3
         env:
           MYSQL_DATABASE: test_db
           MYSQL_USER: db_user
@@ -83,9 +94,6 @@ jobs:
            pip install Django==${{ matrix.DJANGO_VERSION }}
            pip install codecov
 
-      - name: Install django-jsonfield for older Django versions
-        if: ${{ matrix.DJANGO_VERSION == '2.2.*' || matrix.DJANGO_VERSION == '3.0.*' }}
-        run: pip install django-jsonfield
       - name: Testing
         run: |
           if [ "$matrix.DB_ENGINE" = 'mysql' ]; then
