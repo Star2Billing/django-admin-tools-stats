@@ -36,9 +36,11 @@ class ChartSettingsForm(forms.Form):
             self.fields["select_box_multiple_series"] = forms.ChoiceField(
                 label="Divide",
                 choices=[("", "-------")] + list(choices),
-                initial=stats.default_multiseries_criteria.id
-                if stats.default_multiseries_criteria
-                else None,
+                initial=(
+                    stats.default_multiseries_criteria.id
+                    if stats.default_multiseries_criteria
+                    else None
+                ),
             )
             self.fields["select_box_multiple_series"].widget.attrs[
                 "class"
