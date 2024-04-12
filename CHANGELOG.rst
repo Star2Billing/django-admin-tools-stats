@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.3.1 (2024-04-12)
+------------------
+
+* fix for Django 5.0 DashboardStats admin add view
+
 1.3.0 (2023-02-10)
 ------------------
 

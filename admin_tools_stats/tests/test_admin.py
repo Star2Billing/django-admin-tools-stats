@@ -98,6 +98,14 @@ class AdminToolsStatsAdminInterfaceTestCase(BaseSuperuserAuthenticatedClient):
         response = self.client.get("/admin/admin_tools_stats/dashboardstatscriteria/")
         self.assertEqual(response.status_code, 200)
 
+    def test_add_view(self):
+        url = reverse("admin:admin_tools_stats_dashboardstats_add")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        url = reverse("admin:admin_tools_stats_dashboardstatscriteria_add")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
 
 class AdminToolsStatsAdminCharts(BaseSuperuserAuthenticatedClient):
     def test_admin_dashboard_page(self):

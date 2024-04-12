@@ -86,9 +86,12 @@ class DashboardStatsCriteriaInline(admin.TabularInline):
 class DashboardStatsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["default_multiseries_criteria"].queryset = CriteriaToStatsM2M.objects.filter(
-            stats=self.instance,
-        )
+        if self.instance.pk:
+            self.fields["default_multiseries_criteria"].queryset = (
+                CriteriaToStatsM2M.objects.filter(
+                    stats=self.instance,
+                )
+            )
 
 
 @admin.register(DashboardStats)
