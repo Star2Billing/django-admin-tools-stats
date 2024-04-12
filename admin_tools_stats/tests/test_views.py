@@ -92,7 +92,7 @@ class AnalyticsViewTest(BaseSuperuserAuthenticatedClient):
         a = AnalyticsView()
         a.request = self.client.request()
         a.request.user = baker.make("User", is_superuser=True)
-        self.assertQuerysetEqual(a.get_charts_query(), [self.kid_stats, self.stats])
+        self.assertQuerySetEqual(a.get_charts_query(), [self.kid_stats, self.stats])
 
     def test_get_charts_query_usser(self):
         a = AnalyticsView()
@@ -107,7 +107,7 @@ class AnalyticsViewTest(BaseSuperuserAuthenticatedClient):
         )
         a.request = self.client.request()
         a.request.user = baker.make("User")
-        self.assertQuerysetEqual(a.get_charts_query(), [kid_graph_user])
+        self.assertQuerySetEqual(a.get_charts_query(), [kid_graph_user])
 
     def test_get_templates_names(self):
         a = AnalyticsView()

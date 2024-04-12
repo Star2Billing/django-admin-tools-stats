@@ -1409,7 +1409,7 @@ class GetTimeSeriesTests(TestCase):
         testing_data = [
             (datetime(2010, 10, 10, 0, 0).astimezone(UTC), 1),
         ]
-        self.assertQuerysetEqual(serie, testing_data)
+        self.assertQuerySetEqual(serie, testing_data)
 
 
 class CacheModelTests(TestCase):
