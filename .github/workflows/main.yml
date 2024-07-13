@@ -22,39 +22,15 @@ jobs:
         
     strategy:
       matrix:
-        DJANGO_VERSION: ['3.2.*', '4.0.*', '4.1.*', '4.2.*', '5.0.*', '5.1a1,<5.2']
+        DJANGO_VERSION: ['4.2.*', '5.0.*', '5.1a1,<5.2']
         DB_ENGINE: [ 'postgres', 'mysql' ]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         exclude:
-          - DJANGO_VERSION: '3.2.*'
-            python-version: '3.11'
-          - DJANGO_VERSION: '3.2.*'
-            python-version: '3.12'
-
-          - DJANGO_VERSION: '4.0.*'
-            python-version: '3.7'
-          - DJANGO_VERSION: '4.0.*'
-            python-version: '3.11'
-          - DJANGO_VERSION: '4.0.*'
-            python-version: '3.12'
-
-          - DJANGO_VERSION: '4.1.*'
-            python-version: '3.7'
-          - DJANGO_VERSION: '4.2.*'
-            python-version: '3.12'
-
-          - DJANGO_VERSION: '4.2.*'
-            python-version: '3.7'
-
-          - DJANGO_VERSION: '5.0.*'
-            python-version: '3.7'
           - DJANGO_VERSION: '5.0.*'
             python-version: '3.8'
           - DJANGO_VERSION: '5.0.*'
             python-version: '3.9'
 
-          - DJANGO_VERSION: '5.1a1,<5.2'
-            python-version: '3.7'
           - DJANGO_VERSION: '5.1a1,<5.2'
             python-version: '3.8'
           - DJANGO_VERSION: '5.1a1,<5.2'
