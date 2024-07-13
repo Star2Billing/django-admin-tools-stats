@@ -22,7 +22,7 @@ jobs:
         
     strategy:
       matrix:
-        DJANGO_VERSION: ['3.2.*', '4.0.*', '4.1.*', '4.2.*', '5.0.*']
+        DJANGO_VERSION: ['3.2.*', '4.0.*', '4.1.*', '4.2.*', '5.0.*', '5.1a1,<5.2']
         DB_ENGINE: [ 'postgres', 'mysql' ]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         exclude:
@@ -51,6 +51,13 @@ jobs:
           - DJANGO_VERSION: '5.0.*'
             python-version: '3.8'
           - DJANGO_VERSION: '5.0.*'
+            python-version: '3.9'
+
+          - DJANGO_VERSION: '5.1a1,<5.2'
+            python-version: '3.7'
+          - DJANGO_VERSION: '5.1a1,<5.2'
+            python-version: '3.8'
+          - DJANGO_VERSION: '5.1a1,<5.2'
             python-version: '3.9'
       fail-fast: false
 
@@ -88,17 +95,24 @@ jobs:
         uses: actions/setup-python@v2
         with:
               python-version: ${{ matrix.python-version }}
+
+      - name: Prepare Cache Key
+        id: prepare-cache-key
+        run: |
+          DJANGO_VERSION_SAFE='${{ matrix.DJANGO_VERSION }}'
+          echo "DJANGO_VERSION_SAFE=${DJANGO_VERSION_SAFE//,/}" >> $GITHUB_ENV
+
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ hashFiles('setup.py') }}-${{ hashFiles('demoproject/requirements.txt') }}-${{ hashFiles('requirements.txt') }}-${{ matrix.DJANGO_VERSION }}
+          key: ${{ hashFiles('setup.py') }}-${{ hashFiles('demoproject/requirements.txt') }}-${{ hashFiles('requirements.txt') }}-${{ matrix.DJANGO_VERSION_SAFE }}
 
       - name: Install
         run: |
            pip install -e .
            pip install --upgrade --upgrade-strategy eager -r demoproject/requirements.txt
            pip install --upgrade --upgrade-strategy eager -r requirements.txt
-           pip install Django==${{ matrix.DJANGO_VERSION }}
+           pip install Django=='${{ matrix.DJANGO_VERSION }}'
            pip install codecov
 
       - name: Testing
