@@ -12,7 +12,6 @@ from collections import OrderedDict
 from datetime import date, datetime, timezone
 from unittest import skipIf
 
-import django
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models.aggregates import Avg, Count, Max, Min, StdDev, Sum, Variance
@@ -310,7 +309,6 @@ class ModelTests(TestCase):
             "distinct=True, filter=(AND: ('age__isnull', False))))",
         )
 
-    @skipIf(django.VERSION[0] < 3, "Django < 3 doesn't support distinct Avg, Sum, ...")
     def test_get_operation_distinct(self):
         stats = baker.make(
             "DashboardStats",
@@ -1101,7 +1099,6 @@ class ModelTests(TestCase):
                 arguments, time_since, time_until, Interval.days, None, None, user
             )
 
-    @skipIf(django.VERSION[0] < 3, "Django < 3 doesn't support Sum")
     @override_settings(USE_TZ=True, TIME_ZONE="UTC")
     def test_get_multi_series_criteria_user(self):
         """
@@ -1161,7 +1158,6 @@ class ModelTests(TestCase):
         }
         self.assertDictEqual(serie, testing_data)
 
-    @skipIf(django.VERSION[0] < 3, "Django < 3 doesn't support distinct Avg")
     @override_settings(USE_TZ=True, TIME_ZONE="UTC")
     def test_get_multi_series_criteria_isnull(self):
         """
