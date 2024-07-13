@@ -606,7 +606,7 @@ class DashboardStats(models.Model):
             tzinfo_kwargs = {"tzinfo": get_charts_timezone()}
         else:
             tzinfo_kwargs = {}
-        qs = qs.annotate(d=Trunc(self.date_field_name, interval.val(), **tzinfo_kwargs))
+        qs = qs.annotate(d=Trunc(self.date_field_name, interval.val(), **tzinfo_kwargs))  # type: ignore
         qs = qs.values_list("d")
         qs = qs.order_by("d")
         qs = qs.annotate(**aggregate_dict)
