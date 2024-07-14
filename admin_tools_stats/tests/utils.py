@@ -33,9 +33,9 @@ def assertContainsAny(
 ):
     total_count = 0
     for text in texts:
-        text_repr, real_count, msg_prefix = self._assert_contains(
-            response, text, status_code, msg_prefix, html
-        )
+        args = self._assert_contains(response, text, status_code, msg_prefix, html)
+        real_count = args[1]
+        msg_prefix = args[2]
         total_count += real_count
 
     self.assertTrue(total_count != 0, f"None of the {texts} were found in the response: {response}")
