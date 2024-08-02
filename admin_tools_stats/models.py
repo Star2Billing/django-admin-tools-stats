@@ -518,31 +518,28 @@ class DashboardStats(models.Model):
         }
         return operations[operation_choice](operation_field_choice, self.distinct, dkwargs)
 
-    def get_time_series(
+    def get_series_query_parameters(
         self,
-        dynamic_criteria: Mapping[str, Union[str, List[str]]],
         all_criteria: List["CriteriaToStatsM2M"],
-        user: Union[User, AnonymousUser],
+        dynamic_criteria: Mapping[str, Union[str, List[str]]],
         time_since: datetime.datetime,
         time_until: datetime.datetime,
         operation_choice: Optional[str],
         operation_field_choice: Optional[str],
-        interval: Interval,
+        user: Union[User, AnonymousUser],
     ):
-        """Get the stats time series"""
-        kwargs = {}
-        dynamic_kwargs: List[Optional[Q]] = []
-        if not user.has_perm("admin_tools_stats.view_dashboardstats") and self.user_field_name:
-            kwargs[self.user_field_name] = user
+        """ Get the query parameters for the series """
+        aggregate_series: List[Optional[Q]] = []
+        queryset_filters = {}
         for m2m in all_criteria:
             criteria = m2m.criteria
-            # fixed mapping value passed info kwargs
+            # fixed mapping value passed info queryset_filters
             if criteria.criteria_fix_mapping:
                 for key in criteria.criteria_fix_mapping:
                     # value => criteria.criteria_fix_mapping[key]
-                    kwargs[key] = criteria.criteria_fix_mapping[key]
+                    queryset_filters[key] = criteria.criteria_fix_mapping[key]
 
-            # dynamic mapping value passed info kwargs
+            # dynamic mapping value passed info queryset_filters
             dynamic_key = "select_box_dynamic_%i" % m2m.id
             if dynamic_key in dynamic_criteria:
                 if dynamic_criteria[dynamic_key] != "":
@@ -576,14 +573,30 @@ class DashboardStats(models.Model):
                             "__in" if isinstance(criteria_value, list) else ""
                         )
                         if single_value:
-                            kwargs[criteria_key_string] = criteria_value
+                            queryset_filters[criteria_key_string] = criteria_value
                         else:
-                            dynamic_kwargs.append(Q(**{criteria_key_string: criteria_value}))
+                            aggregate_series.append(Q(**{criteria_key_string: criteria_value}))
+        return queryset_filters, aggregate_series
+
+    def get_time_series(
+        self,
+        queryset_filters,
+        aggregate_series,
+        user: Union[User, AnonymousUser],
+        time_since: datetime.datetime,
+        time_until: datetime.datetime,
+        operation_choice: Optional[str],
+        operation_field_choice: Optional[str],
+        interval: Interval,
+    ):
+        """Get the stats time series"""
+        if not user.has_perm("admin_tools_stats.view_dashboardstats") and self.user_field_name:
+            queryset_filters[self.user_field_name] = user
 
         aggregate_dict = {}
         i = 0
-        if not dynamic_kwargs:
-            dynamic_kwargs = [None]
+        if not aggregate_series:
+            aggregate_series = [None]
 
         operations = self.get_operations_list()
         if operations and len(operations) > 1 and operation_choice == "":
@@ -591,7 +604,7 @@ class DashboardStats(models.Model):
                 i += 1
                 aggregate_dict["agg_%i" % i] = self.get_operation(operation_choice, operation)
         else:
-            for dkwargs in dynamic_kwargs:
+            for dkwargs in aggregate_series:
                 i += 1
                 aggregate_dict["agg_%i" % i] = self.get_operation(
                     operation_choice, operation_field_choice, dkwargs
@@ -601,7 +614,7 @@ class DashboardStats(models.Model):
         time_range = {"%s__range" % self.date_field_name: (time_since, time_until)}
         qs = self.get_queryset()
         qs = qs.filter(**time_range)
-        qs = qs.filter(**kwargs)
+        qs = qs.filter(**queryset_filters)
         if isinstance(self.get_date_field(), DateTimeField):
             tzinfo_kwargs = {"tzinfo": get_charts_timezone()}
         else:
@@ -643,9 +656,21 @@ class DashboardStats(models.Model):
         values = []
         names = []
         operations = self.get_operations_list()
+        queryset_filters = {}
+        aggregate_series = []
         if m2m and m2m.criteria.dynamic_criteria_field_name:
+            # First we get only filters for non-multiseries choices to filter choices values
+            choices_filters, _ = self.get_series_query_parameters(
+                all_criteria,
+                dynamic_criteria,
+                time_since,
+                time_until,
+                operation_choice,
+                operation_field_choice,
+                user,
+            )
             choices = m2m.get_dynamic_choices(
-                time_since, time_until, operation_choice, operation_field_choice, user
+                time_since, time_until, operation_choice, operation_field_choice, user, choices_filters
             )
             for key, name in choices.items():
                 if key != "":
@@ -653,7 +678,16 @@ class DashboardStats(models.Model):
                         name = name[1]
                     names.append(name)
                     values.append(key)
-            dynamic_criteria["select_box_dynamic_" + str(m2m.id)] = values
+            queryset_filters, aggregate_series = self.get_series_query_parameters(
+                all_criteria,
+                {f"select_box_dynamic_{str(m2m.id)}": values},
+                time_since,
+                time_until,
+                operation_choice,
+                operation_field_choice,
+                user,
+            )
+            queryset_filters.update(choices_filters)
         elif len(operations) > 1 and operation_choice == "":
             names = operations
         else:
@@ -661,8 +695,8 @@ class DashboardStats(models.Model):
 
         serie_map = {}
         serie_map = self.get_time_series(
-            dynamic_criteria,
-            all_criteria,
+            queryset_filters,
+            aggregate_series,
             user,
             time_since,
             time_until,
@@ -898,6 +932,7 @@ class CriteriaToStatsM2M(models.Model):
         operation_choice=None,
         operation_field_choice=None,
         user=None,
+        queryset_filter=None,
     ) -> "Optional[OrderedDict[str, Tuple[Union[str, bool, List[str]], str]]]":
         field_name = self.get_dynamic_criteria_field_name()
         if self.criteria.criteria_dynamic_mapping:
@@ -945,6 +980,8 @@ class CriteriaToStatsM2M(models.Model):
                 choices_queryset = self.stats.get_queryset().filter(
                     **date_filters,
                 )
+                if queryset_filter:
+                    choices_queryset = choices_queryset.filter(**queryset_filter)
                 if user and not user.has_perm("admin_tools_stats.view_dashboardstats"):
                     if not self.stats.user_field_name:
                         raise Exception(
@@ -987,6 +1024,7 @@ class CriteriaToStatsM2M(models.Model):
         operation_choice=None,
         operation_field_choice=None,
         user=None,
+        queryset_filter=None,
     ):
         if not self.count_limit:  # We don't have to cache different operation choices
             operation_choice = None
@@ -1000,6 +1038,7 @@ class CriteriaToStatsM2M(models.Model):
             operation_choice,
             operation_field_choice,
             user,
+            queryset_filter,
         )
         return choices
 
